@@ -1,4 +1,4 @@
-package redis.clients.util;
+package redis.clients.jedis.util;
 
 /**
  * Holds various methods/utilities to manipualte and parse redis hash-tags. See <a
@@ -12,6 +12,10 @@ public final class JedisClusterHashTagUtil {
 
   public static String getHashTag(String key) {
     return extractHashTag(key, true);
+  }
+
+  public static boolean isClusterCompliantMatchPattern(byte[] matchPattern) {
+    return isClusterCompliantMatchPattern(SafeEncoder.encode(matchPattern));
   }
 
   public static boolean isClusterCompliantMatchPattern(String matchPattern) {

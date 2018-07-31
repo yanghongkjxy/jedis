@@ -2,7 +2,7 @@ package redis.clients.jedis.commands;
 
 import java.util.List;
 
-import redis.clients.util.Slowlog;
+import redis.clients.jedis.util.Slowlog;
 
 public interface AdvancedJedisCommands {
   List<String> configGet(String pattern);
@@ -17,9 +17,9 @@ public interface AdvancedJedisCommands {
 
   List<Slowlog> slowlogGet(long entries);
 
-  Long objectRefcount(String string);
+  Long objectRefcount(String key);
 
-  String objectEncoding(String string);
+  String objectEncoding(String key);
 
-  Long objectIdletime(String string);
+  Long objectIdletime(String key);
 }

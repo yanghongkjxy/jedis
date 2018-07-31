@@ -16,10 +16,10 @@ import javax.net.ssl.SSLSocketFactory;
 import redis.clients.jedis.commands.ProtocolCommand;
 import redis.clients.jedis.exceptions.JedisConnectionException;
 import redis.clients.jedis.exceptions.JedisDataException;
-import redis.clients.util.IOUtils;
-import redis.clients.util.RedisInputStream;
-import redis.clients.util.RedisOutputStream;
-import redis.clients.util.SafeEncoder;
+import redis.clients.jedis.util.IOUtils;
+import redis.clients.jedis.util.RedisInputStream;
+import redis.clients.jedis.util.RedisOutputStream;
+import redis.clients.jedis.util.SafeEncoder;
 
 public class Connection implements Closeable {
 
@@ -108,23 +108,22 @@ public class Connection implements Closeable {
     }
   }
 
-  public Connection sendCommand(final ProtocolCommand cmd, final String... args) {
+  public void sendCommand(final ProtocolCommand cmd, final String... args) {
     final byte[][] bargs = new byte[args.length][];
     for (int i = 0; i < args.length; i++) {
       bargs[i] = SafeEncoder.encode(args[i]);
     }
-    return sendCommand(cmd, bargs);
+    sendCommand(cmd, bargs);
   }
 
-  public Connection sendCommand(final ProtocolCommand cmd) {
-    return sendCommand(cmd, EMPTY_ARGS);
+  public void sendCommand(final ProtocolCommand cmd) {
+    sendCommand(cmd, EMPTY_ARGS);
   }
 
-  public Connection sendCommand(final ProtocolCommand cmd, final byte[]... args) {
+  public void sendCommand(final ProtocolCommand cmd, final byte[]... args) {
     try {
       connect();
       Protocol.sendCommand(outputStream, cmd, args);
-      return this;
     } catch (JedisConnectionException ex) {
       /*
        * When client send request which formed by invalid protocol, Redis send back error message
@@ -186,7 +185,7 @@ public class Connection implements Closeable {
           if (null == sslSocketFactory) {
             sslSocketFactory = (SSLSocketFactory)SSLSocketFactory.getDefault();
           }
-          socket = (SSLSocket) sslSocketFactory.createSocket(socket, host, port, true);
+          socket = sslSocketFactory.createSocket(socket, host, port, true);
           if (null != sslParameters) {
             ((SSLSocket) socket).setSSLParameters(sslParameters);
           }
@@ -202,7 +201,8 @@ public class Connection implements Closeable {
         inputStream = new RedisInputStream(socket.getInputStream());
       } catch (IOException ex) {
         broken = true;
-        throw new JedisConnectionException(ex);
+        throw new JedisConnectionException("Failed connecting to host " 
+            + host + ":" + port, ex);
       }
     }
   }
@@ -272,11 +272,11 @@ public class Connection implements Closeable {
 
   @SuppressWarnings("unchecked")
   public List<Object> getRawObjectMultiBulkReply() {
+    flush();
     return (List<Object>) readProtocolWithCheckingBroken();
   }
 
   public List<Object> getObjectMultiBulkReply() {
-    flush();
     return getRawObjectMultiBulkReply();
   }
 

@@ -38,6 +38,15 @@ public interface BasicCommands {
   String select(int index);
 
   /**
+   * This command swaps two Redis databases, so that immediately all the clients connected to a
+   * given database will see the data of the other database, and the other way around.
+   * @param index1
+   * @param index2
+   * @return Simple string reply: OK if SWAPDB was executed correctly.
+   */
+  String swapDB(int index1, int index2);
+
+  /**
    * Delete all the keys of all the existing databases, not just the currently selected one.
    * @return a simple string reply (OK)
    */
@@ -126,6 +135,8 @@ public interface BasicCommands {
   String debug(DebugParams params);
 
   String configResetStat();
+
+  String configRewrite();
 
   Long waitReplicas(int replicas, long timeout);
 }

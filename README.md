@@ -1,4 +1,6 @@
 [![Build Status](https://travis-ci.org/xetorthio/jedis.png?branch=master)](https://travis-ci.org/xetorthio/jedis)
+[![Maven Central](https://img.shields.io/maven-central/v/redis.clients/jedis.svg)](http://mvnrepository.com/artifact/redis.clients/jedis)
+[![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE.txt)
 
 # Jedis
 
@@ -6,7 +8,7 @@ Jedis is a blazingly small and sane [Redis](http://github.com/antirez/redis "Red
 
 Jedis was conceived to be EASY to use.
 
-Jedis is fully compatible with redis 2.8.x and 3.0.x.
+Jedis is fully compatible with redis 2.8.x and 3.x.x.
 
 ## Community
 
@@ -48,7 +50,7 @@ Or use it as a maven dependency:
 <dependency>
     <groupId>redis.clients</groupId>
     <artifactId>jedis</artifactId>
-    <version>2.8.1</version>
+    <version>2.9.0</version>
     <type>jar</type>
     <scope>compile</scope>
 </dependency>
@@ -96,7 +98,7 @@ Please check the [WIKI](https://github.com/xetorthio/jedis/wiki) for more useful
 
 That is great!
 
-Please see CONTRIBUTING.md on project's root directory for follow up how to contribute to Jedis project.
+Please see [CONTRIBUTING.md](https://github.com/xetorthio/jedis/blob/master/.github/CONTRIBUTING.md) on project's root directory for follow up how to contribute to Jedis project.
 
 Thanks for helping!
 

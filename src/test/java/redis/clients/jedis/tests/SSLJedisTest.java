@@ -1,5 +1,9 @@
 package redis.clients.jedis.tests;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -22,16 +26,14 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
 
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisShardInfo;
 import redis.clients.jedis.exceptions.JedisConnectionException;
-import redis.clients.jedis.tests.commands.JedisCommandTestBase;
 
-public class SSLJedisTest extends JedisCommandTestBase {
+public class SSLJedisTest {
 
   @BeforeClass
   public static void setupTrustStore() {
@@ -39,10 +41,22 @@ public class SSLJedisTest extends JedisCommandTestBase {
   }
 
   private static void setJvmTrustStore(String trustStoreFilePath, String trustStoreType) {
-    Assert.assertTrue(String.format("Could not find trust store at '%s'.", trustStoreFilePath),
+    assertTrue(String.format("Could not find trust store at '%s'.", trustStoreFilePath),
         new File(trustStoreFilePath).exists());
     System.setProperty("javax.net.ssl.trustStore", trustStoreFilePath);
     System.setProperty("javax.net.ssl.trustStoreType", trustStoreType);
+  }
+
+  /**
+   * Tests opening a default SSL/TLS connection to redis using "rediss://" scheme url.
+   */
+  @Test
+  public void connectWithUrl() {
+    // The "rediss" scheme instructs jedis to open a SSL/TLS connection.
+    Jedis jedis = new Jedis("rediss://localhost:6390");
+    jedis.auth("foobared");
+    assertEquals("PONG", jedis.ping());
+    jedis.close();
   }
 
   /**
@@ -53,7 +67,7 @@ public class SSLJedisTest extends JedisCommandTestBase {
     // The "rediss" scheme instructs jedis to open a SSL/TLS connection.
     Jedis jedis = new Jedis(URI.create("rediss://localhost:6390"));
     jedis.auth("foobared");
-    jedis.get("foo");
+    assertEquals("PONG", jedis.ping());
     jedis.close();
   }
 
@@ -77,7 +91,7 @@ public class SSLJedisTest extends JedisCommandTestBase {
     shardInfo.setPassword("foobared");
 
     Jedis jedis = new Jedis(shardInfo);
-    jedis.get("foo");
+    assertEquals("PONG", jedis.ping());
     jedis.disconnect();
     jedis.close();
   }
@@ -107,12 +121,12 @@ public class SSLJedisTest extends JedisCommandTestBase {
 
     Jedis jedis = new Jedis(shardInfo);
     try {
-      jedis.get("foo");
-      Assert.fail("The code did not throw the expected JedisConnectionException.");
+      assertEquals("PONG", jedis.ping());
+      fail("The code did not throw the expected JedisConnectionException.");
     } catch (JedisConnectionException e) {
-      Assert.assertEquals("Unexpected first inner exception.",
+      assertEquals("Unexpected first inner exception.",
           SSLHandshakeException.class, e.getCause().getClass());
-      Assert.assertEquals("Unexpected second inner exception.",
+      assertEquals("Unexpected second inner exception.",
           CertificateException.class, e.getCause().getCause().getClass());
     }
 
@@ -138,7 +152,7 @@ public class SSLJedisTest extends JedisCommandTestBase {
     shardInfo.setPassword("foobared");
 
     Jedis jedis = new Jedis(shardInfo);
-    jedis.get("foo");
+    assertEquals("PONG", jedis.ping());
     jedis.disconnect();
     jedis.close();
   }
@@ -157,7 +171,7 @@ public class SSLJedisTest extends JedisCommandTestBase {
     shardInfo.setPassword("foobared");
 
     Jedis jedis = new Jedis(shardInfo);
-    jedis.get("foo");
+    assertEquals("PONG", jedis.ping());
     jedis.disconnect();
     jedis.close();
   }
@@ -180,10 +194,10 @@ public class SSLJedisTest extends JedisCommandTestBase {
 
     Jedis jedis = new Jedis(shardInfo);
     try {
-      jedis.get("foo");
-      Assert.fail("The code did not throw the expected JedisConnectionException.");
+      assertEquals("PONG", jedis.ping());
+      fail("The code did not throw the expected JedisConnectionException.");
     } catch (JedisConnectionException e) {
-      Assert.assertEquals("The JedisConnectionException does not contain the expected message.",
+      assertEquals("The JedisConnectionException does not contain the expected message.",
           "The connection to '127.0.0.1' failed ssl/tls hostname verification.", e.getMessage());
     }
 
@@ -212,15 +226,15 @@ public class SSLJedisTest extends JedisCommandTestBase {
 
     Jedis jedis = new Jedis(shardInfo);
     try {
-      jedis.get("foo");
-      Assert.fail("The code did not throw the expected JedisConnectionException.");
+      assertEquals("PONG", jedis.ping());
+      fail("The code did not throw the expected JedisConnectionException.");
     } catch (JedisConnectionException e) {
-      Assert.assertEquals("Unexpected first inner exception.",
-          SSLException.class, e.getCause().getClass());
-      Assert.assertEquals("Unexpected second inner exception.",
-          RuntimeException.class, e.getCause().getCause().getClass());
-      Assert.assertEquals("Unexpected third inner exception.",
-          InvalidAlgorithmParameterException.class, e.getCause().getCause().getCause().getClass());
+      assertEquals("Unexpected first inner exception.", SSLException.class,
+          e.getCause().getClass());
+      assertEquals("Unexpected second inner exception.", RuntimeException.class,
+          e.getCause().getCause().getClass());
+      assertEquals("Unexpected third inner exception.", InvalidAlgorithmParameterException.class,
+          e.getCause().getCause().getCause().getClass());
     }
 
     try {

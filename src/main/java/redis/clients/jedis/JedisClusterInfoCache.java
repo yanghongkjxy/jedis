@@ -8,15 +8,11 @@ import java.util.Map;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.SSLParameters;
-import javax.net.ssl.SSLSocketFactory;
-
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 
 import redis.clients.jedis.exceptions.JedisConnectionException;
 import redis.clients.jedis.exceptions.JedisException;
-import redis.clients.util.SafeEncoder;
+import redis.clients.jedis.util.SafeEncoder;
 
 public class JedisClusterInfoCache {
   private final Map<String, JedisPool> nodes = new HashMap<String, JedisPool>();
@@ -31,19 +27,21 @@ public class JedisClusterInfoCache {
   private int connectionTimeout;
   private int soTimeout;
   private String password;
+  private String clientName;
 
   private static final int MASTER_NODE_INDEX = 2;
 
   public JedisClusterInfoCache(final GenericObjectPoolConfig poolConfig, int timeout) {
-    this(poolConfig, timeout, timeout, null);
+    this(poolConfig, timeout, timeout, null, null);
   }
 
   public JedisClusterInfoCache(final GenericObjectPoolConfig poolConfig,
-      final int connectionTimeout, final int soTimeout, final String password) {
+      final int connectionTimeout, final int soTimeout, final String password, final String clientName) {
     this.poolConfig = poolConfig;
     this.connectionTimeout = connectionTimeout;
     this.soTimeout = soTimeout;
     this.password = password;
+    this.clientName = clientName;
   }
 
   public void discoverClusterNodesAndSlots(Jedis jedis) {
@@ -99,15 +97,16 @@ public class JedisClusterInfoCache {
         }
 
         for (JedisPool jp : getShuffledNodesPool()) {
+          Jedis j = null;
           try {
-            jedis = jp.getResource();
-            discoverClusterSlots(jedis);
+            j = jp.getResource();
+            discoverClusterSlots(j);
             return;
           } catch (JedisConnectionException e) {
             // try next nodes
           } finally {
-            if (jedis != null) {
-              jedis.close();
+            if (j != null) {
+              j.close();
             }
           }
         }
@@ -156,41 +155,7 @@ public class JedisClusterInfoCache {
       if (existingPool != null) return existingPool;
 
       JedisPool nodePool = new JedisPool(poolConfig, node.getHost(), node.getPort(),
-          connectionTimeout, soTimeout, password, 0, null, false, null, null, null);
-      nodes.put(nodeKey, nodePool);
-      return nodePool;
-    } finally {
-      w.unlock();
-    }
-  }
-
-  public JedisPool setupNodeIfNotExist(HostAndPort node, boolean ssl) {
-    w.lock();
-    try {
-      String nodeKey = getNodeKey(node);
-      JedisPool existingPool = nodes.get(nodeKey);
-      if (existingPool != null) return existingPool;
-
-      JedisPool nodePool = new JedisPool(poolConfig, node.getHost(), node.getPort(),
-          connectionTimeout, soTimeout, password, 0, null, ssl, null, null, null);
-      nodes.put(nodeKey, nodePool);
-      return nodePool;
-    } finally {
-      w.unlock();
-    }
-  }
-
-  public JedisPool setupNodeIfNotExist(HostAndPort node, boolean ssl, SSLSocketFactory sslSocketFactory,
-                                  SSLParameters sslParameters, HostnameVerifier hostnameVerifier) {
-    w.lock();
-    try {
-      String nodeKey = getNodeKey(node);
-      JedisPool existingPool = nodes.get(nodeKey);
-      if (existingPool != null) return existingPool;
-
-      JedisPool nodePool = new JedisPool(poolConfig, node.getHost(), node.getPort(),
-          connectionTimeout, soTimeout, password, 0, null, ssl, sslSocketFactory, sslParameters,
-          hostnameVerifier);
+          connectionTimeout, soTimeout, password, 0, clientName, false, null, null, null);
       nodes.put(nodeKey, nodePool);
       return nodePool;
     } finally {

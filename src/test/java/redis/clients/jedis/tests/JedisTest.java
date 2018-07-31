@@ -8,7 +8,6 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import org.junit.Test;
@@ -22,7 +21,7 @@ import redis.clients.jedis.exceptions.JedisConnectionException;
 import redis.clients.jedis.exceptions.JedisDataException;
 import redis.clients.jedis.exceptions.JedisException;
 import redis.clients.jedis.tests.commands.JedisCommandTestBase;
-import redis.clients.util.SafeEncoder;
+import redis.clients.jedis.util.SafeEncoder;
 
 public class JedisTest extends JedisCommandTestBase {
   @Test
@@ -56,7 +55,7 @@ public class JedisTest extends JedisCommandTestBase {
 
   @Test(expected = JedisConnectionException.class)
   public void timeoutConnection() throws Exception {
-    jedis = new Jedis("localhost", 6379, 15000);
+    Jedis jedis = new Jedis("localhost", 6379, 15000);
     jedis.auth("foobared");
     jedis.configSet("timeout", "1");
     Thread.sleep(2000);
@@ -65,7 +64,7 @@ public class JedisTest extends JedisCommandTestBase {
 
   @Test(expected = JedisConnectionException.class)
   public void timeoutConnectionWithURI() throws Exception {
-    jedis = new Jedis(new URI("redis://:foobared@localhost:6380/2"), 15000);
+    Jedis jedis = new Jedis(new URI("redis://:foobared@localhost:6380/2"), 15000);
     jedis.configSet("timeout", "1");
     Thread.sleep(2000);
     jedis.hmget("foobar", "foo");
@@ -130,15 +129,15 @@ public class JedisTest extends JedisCommandTestBase {
   public void allowUrlWithNoDBAndNoPassword() {
     Jedis jedis = new Jedis("redis://localhost:6380");
     jedis.auth("foobared");
-    assertEquals(jedis.getClient().getHost(), "localhost");
-    assertEquals(jedis.getClient().getPort(), 6380);
-    assertEquals(jedis.getDB(), 0);
+    assertEquals("localhost", jedis.getClient().getHost());
+    assertEquals(6380, jedis.getClient().getPort());
+    assertEquals(0, jedis.getDB());
 
     jedis = new Jedis("redis://localhost:6380/");
     jedis.auth("foobared");
-    assertEquals(jedis.getClient().getHost(), "localhost");
-    assertEquals(jedis.getClient().getPort(), 6380);
-    assertEquals(jedis.getDB(), 0);
+    assertEquals("localhost", jedis.getClient().getHost());
+    assertEquals(6380, jedis.getClient().getPort());
+    assertEquals(0, jedis.getDB());
   }
 
   @Test
@@ -153,39 +152,6 @@ public class JedisTest extends JedisCommandTestBase {
   public void checkDisconnectOnQuit() {
     jedis.quit();
     assertFalse(jedis.getClient().isConnected());
-  }
-
-  @Test
-  public void testBitfield() {
-    Jedis jedis = new Jedis("redis://localhost:6380");
-    jedis.auth("foobared");
-    jedis.del("mykey");
-    try {
-      List<Long> responses = jedis.bitfield("mykey", "INCRBY","i5","100","1", "GET", "u4", "0");
-      assertEquals(1l, responses.get(0).longValue());
-      assertEquals(0l, responses.get(1).longValue());
-    } finally {
-      jedis.del("mykey");
-    }
-  }
-  
-  @Test
-  /**
-   * Binary Jedis tests should be in their own class
-   */
-  public void testBinaryBitfield() {
-    jedis.close();
-    BinaryJedis binaryJedis = new BinaryJedis("localhost");
-    binaryJedis.auth("foobared");
-    binaryJedis.del("mykey".getBytes());
-    try {
-      List<byte[]> responses = binaryJedis.bitfield("mykey".getBytes(), "INCRBY".getBytes(),"i5".getBytes(),"100".getBytes(),"1".getBytes(), "GET".getBytes(), "u4".getBytes(), "0".getBytes());
-      assertEquals(1l, responses.get(0));
-      assertEquals(0l, responses.get(1));
-    } finally {
-      binaryJedis.del("mykey".getBytes());
-      binaryJedis.close();
-    }
   }
 
 }
